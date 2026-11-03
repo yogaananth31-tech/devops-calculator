@@ -1,0 +1,29 @@
+pipeline {
+    agent any
+    tools {
+        jdk 'JDK21'
+        maven 'Maven'
+    }
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Build') {
+            steps { bat 'mvn -B clean compile' }
+        }
+        stage('Test') {
+            steps { bat 'mvn -B test' }
+            post { always { junit 'target/surefire-reports/*.xml' } }
+        }
+        stage('Package') {
+            steps { bat 'mvn -B package -DskipTests' }
+        }
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    bat 'mvn -B sonar:sonar'
+                }
+            }
+        }
+    }
+}
